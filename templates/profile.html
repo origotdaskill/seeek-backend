@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.first_name }} {{ user.last_name }} - Profile</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; }
+        .profile { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .profile img { max-width: 150px; border-radius: 50%; }
+        h1, h2 { color: #555; }
+        p { line-height: 1.6; }
+        .section { margin-top: 20px; }
+        .section h3 { border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="profile">
+        <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+        <p><strong>Job Title:</strong> {{ user.job_title }}</p>
+        <p><strong>Age:</strong> {{ user.age }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Phone:</strong> {{ user.phone_number }}</p>
+        <p><strong>Address:</strong> {{ user.address }}</p>
+
+        {% if user.profile_pic %}
+        <img src="{{ url_for('static', filename='uploads/pictures/' + user.profile_pic) }}" alt="Profile Picture">
+        {% else %}
+        <p>No profile picture available.</p>
+        {% endif %}
+
+        <div class="section">
+            <h3>About Me</h3>
+            <p>{{ user.description }}</p>
+        </div>
+
+        <div class="section">
+            <h3>Social Links</h3>
+            {% for platform, link in user.social_links.items() %}
+                <p><strong>{{ platform }}:</strong> <a href="{{ link }}" target="_blank">{{ link }}</a></p>
+            {% endfor %}
+        </div>
+
+        {% if user.cv %}
+        <div class="section">
+            <h3>CV</h3>
+            <a href="{{ url_for('static', filename='uploads/cvs/' + user.cv.split('/')[-1]) }}" target="_blank">Download CV</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
