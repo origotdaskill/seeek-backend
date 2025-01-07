@@ -1,9 +1,3 @@
-# Ignore the entire "files" directory
-/files/
-
-# Ignore the entire "pictures" directory
-/pictures/
-
 # Ignore specific files inside "files" and "pictures" directories
 /files/*
 /pictures/*
