@@ -1,4 +1,4 @@
-#!/home/origotdaskill/seeek-app/seeek/bin/python
+#!/var/www/seeek-backend/seeek/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

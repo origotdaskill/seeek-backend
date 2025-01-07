@@ -1,12 +1,11 @@
 from datetime import datetime
 
 class Portfolio:
-    def __init__(self, email, skills, work_experience, education , links ):
+    def __init__(self, email, skills, work_experience, education ):
         self.email = email  # User ID to associate portfolio with the user
         self.skills = skills  # List of skills (strings or dictionaries)
         self.work_experience = work_experience  # List of work experiences (dictionaries)
         self.education = education  # List of education details (dictionaries)
-        self.links = links 
         
     def to_dict(self):
         """Converts the Portfolio object to a dictionary for MongoDB"""
@@ -15,6 +14,5 @@ class Portfolio:
             "skills": self.skills,
             "work_experience": self.work_experience,
             "education": self.education,
-            "links" : self.links, 
             "created_at": datetime.utcnow()  # Add creation timestamp
         }

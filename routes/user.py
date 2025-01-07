@@ -219,6 +219,10 @@ def check_profile_status():
         if not portfolio:
             missing_data.append("Portfolio data is missing.")
         else:
+            if not portfolio.get("links") or len(portfolio["links"]) == 0:
+                for link in portfolio.get("links", []):
+                                    if not link.get("name") or not link.get("url"):
+                                        missing_data.append(f"Link '{link.get('name', 'Unnamed')}' is missing a valid URL.")
             if not portfolio.get("skills") or len(portfolio["skills"]) == 0:
                 missing_data.append("Skills are missing.")
             if not portfolio.get("links") or len(portfolio["links"]) == 0:
@@ -227,10 +231,7 @@ def check_profile_status():
                 missing_data.append("Education details are missing.")
             if not portfolio.get("work_experience") or len(portfolio["work_experience"]) == 0:
                 missing_data.append("Work experience details are missing.")
-            else:
-                for link in portfolio.get("links", []):
-                    if not link.get("name") or not link.get("url"):
-                        missing_data.append(f"Link '{link.get('name', 'Unnamed')}' is missing a valid URL.")
+                
 
         # Determine profile completeness
         is_profile_complete = len(missing_data) == 0
@@ -310,21 +311,20 @@ def register_user():
 
 
 
-@user_bp.route('/<user_id>', methods=['GET'])
-def get_user(user_id):
+@user_bp.route('/<email>', methods=['GET'])
+def get_user(email):
     mongo = PyMongo(current_app)
     db = mongo.db
 
     try:
-        user = db.users.find_one({"_id": ObjectId(user_id)})
+        user = db.users.find_one({"email": email})  # Query by email directly
         if user:
-            user["_id"] = str(user["_id"])
+            user["_id"] = str(user["_id"])  # Convert ObjectId to string
             return jsonify({"user": user}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
     return jsonify({"error": "User not found"}), 404
-
 # Route to get all users (GET request)
 
 
