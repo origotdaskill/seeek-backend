@@ -1,0 +1,34 @@
+# Ignore the entire "files" directory
+/files/
+
+# Ignore the entire "pictures" directory
+/pictures/
+
+# Ignore specific files inside "files" and "pictures" directories
+/files/*
+/pictures/*
+
+# Ignore all files with certain extensions (optional)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.pdf
+*.doc
+*.docx
+*.txt
+*.zip
+
+# Ignore other common files and directories
+.DS_Store
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.env
+venv/
+env/
