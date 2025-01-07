@@ -36,8 +36,23 @@ def add_user_to_db(user_data, password):
     db.users.insert_one(user.to_dict())
     return user
 
+def generate_unique_filename(first_name, last_name, original_filename):
+    """
+    Generate a unique filename using first name, last name, and current date.
+    Example: John_Doe_20231025_143022.jpg
+    """
+    # Format the current date and time
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Get the file extension (e.g., .jpg, .pdf)
+    file_extension = os.path.splitext(original_filename)[1]
+    # Combine first name, last name, timestamp, and extension
+    return f"{first_name}_{last_name}_{timestamp}{file_extension}"
 
-
+def delete_existing_file(file_path):
+    """Delete an existing file if it exists."""
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        
 @user_bp.route("/auth/register", methods=["POST"])
 def register_new_user():
     """Register a new user and create a default portfolio."""
@@ -152,19 +167,31 @@ def create_profile():
 
     # Handle profile image upload
     if profile_image and allowed_file(profile_image.filename, ALLOWED_FILE_EXTENSIONS):
-        filename = secure_filename(profile_image.filename)
-        image_path = os.path.join(UPLOAD_FOLDER, "pictures", filename)
+        # Generate unique filename using first name, last name, and date
+        unique_image_name = generate_unique_filename(first_name, last_name, profile_image.filename)
+        image_path = os.path.join(UPLOAD_FOLDER, "pictures", unique_image_name)
+        
+        # Delete existing file if it exists
+        delete_existing_file(image_path)
+        
+        # Save the new file
         os.makedirs(os.path.dirname(image_path), exist_ok=True)  # Ensure directory exists
         profile_image.save(image_path)
-        db_image_path = f"{filename}"  # Save relative path
+        db_image_path = unique_image_name # Save relative path
 
     # Handle regular file upload
     if uploaded_file and allowed_file(uploaded_file.filename, ALLOWED_FILE_EXTENSIONS):
-        filename = secure_filename(uploaded_file.filename)
-        file_path = os.path.join(UPLOAD_FOLDER, "files", filename)
+        # Generate unique filename using first name, last name, and date
+        unique_file_name = generate_unique_filename(first_name, last_name, uploaded_file.filename)
+        file_path = os.path.join(UPLOAD_FOLDER, "files", unique_file_name)
+        
+        # Delete existing file if it exists
+        delete_existing_file(file_path)
+        
+        # Save the new file
         os.makedirs(os.path.dirname(file_path), exist_ok=True)  # Ensure directory exists
         uploaded_file.save(file_path)
-        db_file_path = f"{filename}"  # Save relative path
+        db_file_path = unique_file_name # Save relative path
 
     # Prepare updated data
     updated_data = {
@@ -244,7 +271,6 @@ def check_profile_status():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @user_bp.route('/register', methods=['POST'])
 def register_user():
     data = request.form.to_dict()  # Use form data for both text and file inputs
@@ -277,22 +303,31 @@ def register_user():
 
     picture_path = None
     if picture and allowed_file(picture.filename):
-        picture_filename = secure_filename(
-            f"{data['pseudonym']}_picture_{picture.filename}")
-        picture_path = os.path.join(
-            upload_folder, "pictures", picture_filename)
+        # Generate unique filename using first name, last name, and date
+        unique_picture_name = generate_unique_filename(data['first_name'], data['last_name'], picture.filename)
+        picture_path = os.path.join(upload_folder, "pictures", unique_picture_name)
+        
+        # Delete existing file if it exists
+        delete_existing_file(picture_path)
+        
+        # Save the new file
         os.makedirs(os.path.dirname(picture_path), exist_ok=True)
         picture.save(picture_path)
-        db_picture_path = os.path.join(picture_filename)
+        db_picture_path = f"pictures/{unique_picture_name}"
 
     files_path = None
     if files and allowed_file(files.filename):
-        files_filename = secure_filename(
-            f"{data['pseudonym']}_files_{files.filename}")
-        files_path = os.path.join(upload_folder, "files", files_filename)
+        # Generate unique filename using first name, last name, and date
+        unique_files_name = generate_unique_filename(data['first_name'], data['last_name'], files.filename)
+        files_path = os.path.join(upload_folder, "files", unique_files_name)
+        
+        # Delete existing file if it exists
+        delete_existing_file(files_path)
+        
+        # Save the new file
         os.makedirs(os.path.dirname(files_path), exist_ok=True)
         files.save(files_path)
-        db_files_path = os.path.join(files_filename)
+        db_files_path = f"files/{unique_files_name}"
 
     # Build user data
     user_data = {key: data[key] for key in data if key != "password"}
@@ -307,9 +342,6 @@ def register_user():
         return jsonify({"message": "User registered successfully!"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
 
 @user_bp.route('/<email>', methods=['GET'])
 def get_user(email):
@@ -326,148 +358,4 @@ def get_user(email):
 
     return jsonify({"error": "User not found"}), 404
 # Route to get all users (GET request)
-
-
-@user_bp.route('/list_users', methods=['GET'])
-def list_users():
-    mongo = PyMongo(current_app)
-    db = mongo.db
-
-    # Retrieve all users and convert their IDs to strings
-    users = list(db.users.find())
-    for user in users:
-        user['_id'] = str(user['_id'])
-
-    return jsonify({"users": users}), 200
-
-# Upload profile photo
-
-
-@user_bp.route('/upload_profile_pic/<user_id>', methods=['POST'])
-def upload_profile_pic(user_id):
-    mongo = PyMongo(current_app)
-    db = mongo.db
-
-    # Check if a file was submitted
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files['file']
-
-    # If no file is selected
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    # Check if the file has an allowed extension
-    if file and allowed_file(file.filename):
-        # Fetch the user's username from the database
-        user = db.users.find_one({"_id": ObjectId(user_id)})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        # Fallback if first_name doesn't exist
-        username = user.get("first_name", "user")
-
-        # Generate a new filename based on username and current date
-        file_extension = file.filename.rsplit('.', 1)[1].lower()
-        current_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        new_filename = f"{username}_{current_date}.{file_extension}"
-
-        # Secure the filename and save the file
-        filename = secure_filename(new_filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-
-        # Ensure the upload folder exists
-        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-            os.makedirs(current_app.config['UPLOAD_FOLDER'])
-
-        file.save(file_path)
-
-        # Store only the filename in the database
-        db.users.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": {"profile_pic": filename}}  # Save the filename only
-        )
-
-        return jsonify({
-            "message": "Profile picture uploaded successfully!",
-            "picture": filename  # Return the filename only for use in URLs
-        }), 200
-
-    return jsonify({"error": "Invalid file format"}), 400
-
-
-@user_bp.route('/update/<user_id>', methods=['PUT'])
-def update_user(user_id):
-    mongo = PyMongo(current_app)
-    db = mongo.db
-
-    data = request.json
-
-    if not data:
-        return jsonify({"error": "No data provided for update"}), 400
-
-    try:
-        result = db.users.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": data}
-        )
-
-        if result.matched_count:
-            return jsonify({"message": "User profile updated successfully"}), 200
-        return jsonify({"error": "User not found"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Route to upload files
-
-
-@user_bp.route("/upload_files/<user_id>", methods=["POST"])
-def upload_files(user_id):
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files["file"]
-
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
-
-    if file and allowed_file(file.filename):
-        # Rename file: pseudonym_date.extension
-        mongo = PyMongo(current_app)
-        db = mongo.db
-
-        user = db.users.find_one({"_id": ObjectId(user_id)})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        # Get user's pseudonym to use in the file name
-        pseudonym = user.get("pseudonym", "user")
-        filename = secure_filename(f"{pseudonym}_files_{file.filename}")
-
-        # Save file to uploads directory
-        upload_folder = os.path.join(
-            current_app.root_path, "static/uploads/files")
-        # Ensure the directory exists
-        os.makedirs(upload_folder, exist_ok=True)
-        file_path = os.path.join(upload_folder, filename)
-        file.save(file_path)
-
-        # Store only the filename in the database for files
-        db.users.update_one({"_id": ObjectId(user_id)}, {
-                            "$set": {"files": filename}})
-
-        return jsonify({"message": "files uploaded successfully", "files": filename}), 200
-
-    return jsonify({"error": "File type not allowed"}), 400
-
-# Route for user registration
-
-
-
-
-
-
-
-
 
