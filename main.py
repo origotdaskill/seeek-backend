@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, session
 from flask_pymongo import PyMongo
-from routes.portfolio import portfolio_bp, init_portfolio_routes
+from routes.portfolio import portfolio_bp
 from routes.user import user_bp
 from routes.profile import web_bp
 import os
@@ -57,7 +57,6 @@ def index():
 
 
 # Register blueprint (Routes)
-portfolio_bp = init_portfolio_routes(mongo)
 app.register_blueprint(portfolio_bp, url_prefix="/api/portfolio")
 app.register_blueprint(user_bp, url_prefix="/api/user")
 app.register_blueprint(web_bp, url_prefix="/web")

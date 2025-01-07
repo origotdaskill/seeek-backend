@@ -144,5 +144,3 @@ def manage_links(email):
 
         return jsonify({"message": f"Link '{link_name}' deleted successfully"}), 200
 
-  
-  
